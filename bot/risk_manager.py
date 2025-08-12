@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, Dict
 from config import config
 
@@ -25,12 +25,12 @@ class RiskManager:
         self.max_spread_points = max_spread_points
         self.max_open_positions = max_open_positions
 
-        self.current_day: date = datetime.utcnow().date()
+        self.current_day: date = datetime.now(timezone.utc).date()
         self.starting_day_equity: Optional[float] = None
         self.trading_halted_today: bool = False
 
     def reset_daily_tracker_if_needed(self, current_equity: float):
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         if self.current_day != today or self.starting_day_equity is None:
             self.current_day = today
             self.starting_day_equity = current_equity

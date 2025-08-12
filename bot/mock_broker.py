@@ -25,7 +25,17 @@ class PublicApiMockBroker(BrokerInterface):
         self.positions: Dict[int, Position] = {}
         self.next_ticket = 10001
         self.last_price = 60000.0
+        self.simulated_price: Optional[float] = None
         self.spread_points = 10.0
+
+    def set_simulated_price(self, price: float):
+        """Allows tests and paper simulations to inject controlled prices."""
+        self.simulated_price = price
+        self.last_price = price
+
+    def clear_simulated_price(self):
+        """Clears simulated price to resume live API polling."""
+        self.simulated_price = None
 
     def connect(self) -> bool:
         self.connected = True
@@ -43,6 +53,8 @@ class PublicApiMockBroker(BrokerInterface):
 
     def _fetch_live_ticker(self, symbol: str) -> float:
         """Fetch live ticker price from Binance public API with fallback."""
+        if self.simulated_price is not None:
+            return self.simulated_price
         try:
             clean_sym = symbol.replace("/", "").replace("_", "").upper()
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={clean_sym}"
