@@ -6,6 +6,11 @@ __pycache__/
 
 # Environments
 .env
+.env.*
+!.env.example
+.secrets/
+*.pem
+*.key
 .venv
 env/
 venv/
