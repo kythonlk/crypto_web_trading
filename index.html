@@ -1,40 +1,536 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Orbit | Trading workspace</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css"><script src="app.js" defer></script>
-</head>
-<body class="bg-[#090d12] text-slate-300">
-<div id="auth-gate" class="fixed inset-0 z-[100] grid place-items-center bg-[#090d12] p-6"><form id="auth-form" class="panel w-full max-w-sm p-6"><p class="mb-2 text-xs tracking-widest text-lime-300">ORBIT / PRIVATE</p><h1 class="text-2xl font-semibold text-white">Unlock dashboard</h1><p class="my-4 text-sm text-slate-500">Local lock only. Change DASHBOARD_PIN in app.js.</p><input id="auth-pin" type="password" placeholder="Dashboard PIN" required><button class="primary mt-4 w-full">Unlock</button><p id="auth-error" class="mt-3 hidden text-xs text-rose-400">Wrong PIN.</p></form></div>
-<aside class="fixed inset-y-0 hidden w-56 flex-col border-r border-white/[.07] bg-[#0d1218] p-6 lg:flex">
-<a href="#overview" class="mb-12 flex items-center gap-3 text-2xl font-bold text-white"><span class="rounded-lg bg-lime-300 px-2 text-slate-950">◈</span> orbit.</a>
-<p class="mb-4 text-[10px] uppercase tracking-[.2em] text-slate-600">Workspace</p>
-<nav class="space-y-2 text-sm" aria-label="Main"><a class="nav active" href="#overview">▦ <span>Overview</span></a><a class="nav" href="#markets">⌁ <span>Markets</span></a><a class="nav" href="#positions">▤ <span>Positions</span></a><a class="nav" href="#strategy">◇ <span>Strategy lab</span></a><button class="nav w-full" data-settings>⚙ <span>Risk settings</span></button></nav>
-<div class="mt-auto rounded-xl border border-lime-300/15 bg-lime-300/[.03] p-4"><p class="text-xs text-lime-300">● MT5 demo</p><p class="mt-2 text-xs leading-5 text-slate-500">Configured locally<br>Credentials hidden</p></div><div class="mt-6 border-t border-white/10 pt-5 text-xs">Trading workspace<p class="mt-1 text-slate-600">Demo live mode</p></div>
-</aside>
-<main class="lg:ml-56">
-<header class="flex h-20 items-center justify-between border-b border-white/[.07] px-6 md:px-9"><p class="text-xs text-slate-500">Workspace <span class="mx-3">/</span><span class="text-slate-200">Overview</span></p><div class="flex items-center gap-4"><span class="rounded border border-lime-300/20 bg-lime-300/5 px-2 py-1 text-[10px] tracking-widest text-lime-200">MT5 DEMO LIVE</span><span id="clock" class="hidden text-xs text-slate-500 sm:block"></span></div></header>
-<div id="overview" class="mx-auto max-w-[1600px] space-y-6 p-5 md:p-9">
-<section class="flex flex-wrap items-center justify-between gap-4"><div><p class="mb-2 text-[10px] tracking-[.2em] text-lime-300">YOUR EDGE, IN FOCUS</p><h1 class="text-3xl font-semibold text-white">Trading overview</h1><p class="mt-2 text-sm text-slate-500">Your markets, strategies, and exposure. All in one place.</p></div><div class="flex gap-3"><button id="export" class="secondary">↓ Export snapshot</button><button data-settings class="primary">⚙ Configure preview</button></div></section>
-<div class="flex flex-wrap justify-between gap-2 rounded-lg border border-white/[.07] bg-[#10161e] px-4 py-3 text-xs"><p class="text-slate-400"><span class="mr-2 text-amber-300">●</span> MT5 disconnected <span class="mx-2 text-slate-600">/</span> Sample figures. No orders are being placed.</p><button id="connect" class="text-lime-300">Connection details ↗</button></div>
-<section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Illustrative account metrics">
-<article class="panel p-5"><p class="label">Account equity <span>↗</span></p><p class="value">$10,482<span class="text-slate-500">.65</span></p><p class="mt-3 text-xs text-emerald-400">+$482.65 <span class="ml-2 text-slate-500">sample total return</span></p><svg viewBox="0 0 240 28" class="mt-4 h-7 w-full" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 L20 20 40 23 60 13 80 17 100 11 120 15 140 6 160 10 180 4 200 9 220 3 240 1" stroke="#bef264" stroke-width="2" fill="none"/></svg></article>
-<article class="panel p-5"><p class="label">Today's P&L <span>⌁</span></p><p class="value text-emerald-400">+$128.40</p><p class="mt-3 text-xs text-slate-500"><span class="text-emerald-400">+1.24%</span> sample daily return</p><div class="mt-5 flex h-6 items-end gap-2" aria-hidden="true"><i class="bar h-2"></i><i class="bar h-4"></i><i class="bar h-3"></i><i class="bar h-5"></i><i class="bar h-3"></i><i class="bar h-6"></i><i class="bar h-5"></i></div></article>
-<article class="panel p-5"><p class="label">Open positions <span>▤</span></p><p class="value">2 <span class="text-base text-slate-500">examples</span></p><p class="mt-3 text-xs text-slate-500">1 crypto <span class="mx-2">·</span> 1 forex</p><div class="mt-6 grid grid-cols-4 gap-2"><i class="h-1.5 rounded bg-lime-300"></i><i class="h-1.5 rounded bg-lime-300"></i><i class="h-1.5 rounded bg-slate-800"></i><i class="h-1.5 rounded bg-slate-800"></i></div></article>
-<article class="panel p-5"><p class="label">Daily drawdown <span>◈</span></p><p class="value">0.42<span class="text-slate-500">%</span></p><p class="mt-3 text-xs text-slate-500">of <span id="limit-label">3.00%</span> preview limit</p><div class="mt-6 h-1.5 rounded bg-slate-800"><div id="drawdown" class="h-full w-[14%] rounded bg-amber-200"></div></div></article>
-</section>
-<div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">
-<section class="panel min-w-0"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><div><h2>Portfolio performance</h2><p class="mt-1 text-xs text-slate-500">Illustrative equity curve · USD</p></div><div class="flex gap-1" role="group" aria-label="Chart period"><button class="period" data-period="1D">1D</button><button class="period" data-period="1W">1W</button><button class="period selected" data-period="1M">1M</button><button class="period" data-period="ALL">All</button></div></div><div class="px-5 text-2xl font-medium text-white">$10,482.65 <span class="ml-2 text-xs text-lime-300">+4.83% sample</span></div><svg id="chart" viewBox="0 0 800 270" class="my-5 w-full" role="img" aria-label="Illustrative equity, not actual trading performance"></svg><div class="flex flex-wrap justify-between gap-2 border-t border-white/[.06] px-5 py-4 text-xs text-slate-500"><span><span class="mr-2 text-lime-300">●</span> Account equity</span><span>Starting balance <span class="ml-2 text-slate-300">$10,000.00</span></span><span>Not a forecast</span></div></section>
-<section id="strategy" class="panel p-5"><div class="flex justify-between"><h2>Strategy engine</h2><span class="text-[10px] text-slate-500">OFFLINE</span></div><label for="strategy-select" class="mt-6 block text-xs text-slate-500">Preview strategy</label><select id="strategy-select" class="mt-2 w-full rounded-lg border border-white/10 bg-[#171f28] p-3 text-sm text-white"><option value="trend">Trend momentum</option><option value="breakout">Regime breakout · experimental</option></select><p id="strategy-desc" class="mt-3 h-10 text-xs leading-5 text-slate-500">EMA trend alignment, RSI momentum, and ATR stops.</p><dl class="mt-5 space-y-4 text-xs"><div class="flex justify-between"><dt class="text-slate-500">Timeframe</dt><dd>M15 · Closed candles</dd></div><div class="flex justify-between"><dt class="text-slate-500">Risk per trade</dt><dd id="risk-label">1.00%</dd></div><div class="flex justify-between"><dt class="text-slate-500">Target reward / risk</dt><dd>2 : 1</dd></div><div class="flex justify-between"><dt class="text-slate-500">Execution</dt><dd class="text-amber-200">Demo only</dd></div></dl><p class="mt-5 rounded-lg bg-black/20 p-3 text-xs leading-5 text-slate-500">Awaiting MT5 connection. Both strategies require historical and forward testing.</p></section>
-</div>
-<section id="markets" class="panel overflow-hidden"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><div><h2>Market watch</h2><p class="mt-1 text-xs text-slate-500">Forex & crypto · sample quotes</p></div><div role="group" aria-label="Market filter"><button class="filter selected" data-filter="all">All markets</button><button class="filter" data-filter="crypto">Crypto</button><button class="filter" data-filter="forex">Forex</button></div></div><div id="market-grid" class="grid gap-px bg-white/[.06] sm:grid-cols-2 xl:grid-cols-4"></div></section>
-<section id="positions" class="panel overflow-hidden"><div class="flex justify-between p-5"><h2>Open positions <span class="ml-2 text-xs text-slate-500">2 examples</span></h2><span class="text-xs text-slate-500">Simulated entries</span></div><div class="overflow-x-auto"><table class="w-full whitespace-nowrap text-left text-xs"><thead class="border-y border-white/[.06] text-slate-500"><tr><th>Instrument</th><th>Side</th><th>Volume</th><th>Entry</th><th>Stop loss</th><th>Take profit</th><th>P&L</th></tr></thead><tbody><tr><td class="text-white">BTC / USD</td><td class="text-emerald-400">BUY</td><td>0.01 lot</td><td>63,240.00</td><td>62,480.00</td><td>64,760.00</td><td class="text-emerald-400">+$12.85</td></tr><tr><td class="text-white">EUR / USD</td><td class="text-emerald-400">BUY</td><td>0.10 lot</td><td>1.08320</td><td>1.08020</td><td>1.08920</td><td class="text-emerald-400">+$24.50</td></tr></tbody></table></div></section>
-<footer class="flex flex-wrap justify-between gap-2 text-[11px] text-slate-600"><p><span class="text-lime-300">◈</span> Orbit workspace / Demo first.</p><p>Preview only · No account connected</p></footer>
-</div></main>
-<dialog id="settings" class="modal"><form id="settings-form"><div class="flex justify-between"><h2>Preview risk settings</h2><button type="button" data-close aria-label="Close">×</button></div><p class="my-5 text-sm leading-6 text-slate-400">Updates this page only. Python bot settings stay in your local configuration.</p><label class="block text-sm">Risk per trade (%)<input id="risk" type="number" min="0.1" max="2" step="0.1" value="1" required></label><label class="mt-4 block text-sm">Daily drawdown limit (%)<input id="limit" type="number" min="0.5" max="10" step="0.5" value="3" required></label><button class="primary mt-5 w-full">Save preview settings</button></form></dialog>
-<dialog id="connection" class="modal"><h2>Connect your demo terminal</h2><p class="my-5 text-sm leading-6 text-slate-400">The bot needs the exact broker server name and an installed MT5 terminal. Keep credentials in a private .env file. This dashboard does not collect passwords or connect to MT5.</p><button data-close class="secondary w-full">Got it</button></dialog>
-<div id="toast" role="status" class="fixed bottom-5 left-1/2 hidden -translate-x-1/2 rounded-lg border border-lime-300/20 bg-[#1a241a] px-5 py-3 text-sm text-lime-200"></div>
-</body></html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Orbit | MT5 Algorithmic Trading Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body class="bg-[#090d12] text-slate-300 antialiased">
+    <!-- JWT Auth Modal Overlay -->
+    <div
+      id="auth-overlay"
+      class="fixed inset-0 z-[150] grid place-items-center bg-[#090d12]/95 backdrop-blur-md p-6 transition-all duration-300"
+    >
+      <div class="panel w-full max-w-sm p-7 border border-white/10 shadow-2xl relative">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="rounded bg-lime-300 px-2 py-0.5 text-xs font-bold text-slate-950">◈</span>
+          <p class="text-xs font-mono tracking-widest text-lime-300 uppercase">ORBIT / SECURE AUTH</p>
+        </div>
+        <h1 class="text-2xl font-bold text-white tracking-tight">Account Login</h1>
+        <p class="mt-2 text-xs text-slate-400 leading-relaxed">
+          Sign in to access your live MetaTrader 5 trading engine and portfolio controls.
+        </p>
+
+        <form id="login-form" class="mt-6 space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+            <input
+              id="login-username"
+              type="text"
+              autocomplete="username"
+              placeholder="admin"
+              value="admin"
+              required
+              class="w-full rounded bg-[#171f28] p-3 text-sm text-white border border-white/10 focus:border-lime-300 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter your dashboard password"
+              value=""
+              required
+              class="w-full rounded bg-[#171f28] p-3 text-sm text-white border border-white/10 focus:border-lime-300 focus:outline-none"
+            />
+          </div>
+
+          <div id="login-error" class="hidden rounded bg-rose-500/10 border border-rose-500/20 p-2.5 text-xs text-rose-300">
+            Invalid username or password.
+          </div>
+
+          <button id="login-btn" type="submit" class="primary w-full mt-2 flex items-center justify-center gap-2">
+            <span id="login-btn-text">Sign In with JWT</span>
+          </button>
+
+          <p class="text-[11px] text-center text-slate-500 pt-2">
+            Default credentials: <span class="font-mono text-slate-400">admin</span> / <span class="font-mono text-slate-400">admin123</span>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside
+      class="fixed inset-y-0 hidden w-60 flex-col border-r border-white/[.07] bg-[#0d1218] p-6 lg:flex z-40"
+    >
+      <a
+        href="#overview"
+        class="mb-10 flex items-center gap-3 text-2xl font-bold text-white tracking-tight"
+      >
+        <span class="rounded-lg bg-lime-300 px-2 py-0.5 text-slate-950 font-black">◈</span>
+        orbit.
+      </a>
+
+      <p class="mb-3 text-[10px] uppercase tracking-[.2em] text-slate-600 font-semibold">
+        Workspace
+      </p>
+      <nav class="space-y-1.5 text-sm" aria-label="Main">
+        <a id="nav-overview" class="nav active" href="#overview">▦ <span>Overview</span></a>
+        <a id="nav-markets" class="nav" href="#markets">⌁ <span>Markets</span></a>
+        <a id="nav-positions" class="nav" href="#positions">▤ <span>Positions</span></a>
+        <a id="nav-strategy" class="nav" href="#strategy">◇ <span>Strategy Lab</span></a>
+        <button id="nav-settings" class="nav w-full text-left" data-settings>
+          ⚙ <span>Risk Settings</span>
+        </button>
+      </nav>
+
+      <!-- Account Info Card -->
+      <div class="mt-auto rounded-xl border border-lime-300/15 bg-lime-300/[.03] p-4">
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-semibold text-lime-300 flex items-center gap-1.5">
+            <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            MT5 Connected
+          </p>
+          <span id="algo-status-pill" class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium">Algo Off</span>
+        </div>
+        <p id="sidebar-account-info" class="mt-2 text-xs leading-5 text-slate-400 font-mono">
+          Login: 113061165<br />
+          Server: MetaQuotes-Demo
+        </p>
+      </div>
+
+      <!-- User Session & Logout -->
+      <div class="mt-4 border-t border-white/10 pt-4 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <div class="h-6 w-6 rounded-full bg-lime-300/20 text-lime-300 font-bold grid place-items-center text-[10px]">A</div>
+          <span id="user-display" class="font-medium text-slate-300 truncate max-w-[90px]">admin</span>
+        </div>
+        <button id="logout-btn" class="text-slate-400 hover:text-rose-400 text-xs px-2 py-1 rounded hover:bg-white/5 transition">
+          Log out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="lg:ml-60">
+      <header
+        class="flex h-20 items-center justify-between border-b border-white/[.07] px-6 md:px-9"
+      >
+        <p class="text-xs text-slate-500">
+          Workspace <span class="mx-3">/</span
+          ><span class="text-slate-200">Live Trading</span>
+        </p>
+        <div class="flex items-center gap-4">
+          <span
+            id="header-live-badge"
+            class="rounded border border-lime-300/20 bg-lime-300/10 px-2.5 py-1 text-[10px] tracking-widest text-lime-300 font-semibold"
+            >MT5 LIVE DEMO</span
+          >
+          <span id="clock" class="hidden text-xs font-mono text-slate-400 sm:block"></span>
+        </div>
+      </header>
+
+      <div id="overview" class="mx-auto max-w-[1600px] space-y-6 p-5 md:p-9">
+        <!-- Title & Action Bar -->
+        <section class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p class="mb-1 text-[10px] tracking-[.2em] text-lime-300 font-semibold">
+              ALGORITHMIC EXECUTION
+            </p>
+            <h1 class="text-3xl font-semibold text-white">Live Trading Dashboard</h1>
+            <p class="mt-1.5 text-sm text-slate-400">
+              Real-time exposure, position tracker, and algorithmic signals streaming from MetaTrader 5.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <button id="export" class="secondary flex items-center gap-1.5">
+              <span>↓</span> Export Snapshot
+            </button>
+            <button data-settings class="primary flex items-center gap-1.5">
+              <span>⚙</span> Risk Settings
+            </button>
+          </div>
+        </section>
+
+        <!-- Dynamic Connection Banner -->
+        <div
+          id="status-banner"
+          class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-lime-500/20 bg-[#10161e] px-4 py-3 text-xs"
+        >
+          <p id="connection-status-text" class="text-slate-300">
+            <span class="mr-2 text-emerald-400">●</span>
+            <strong>Connected to MT5 Demo:</strong> Account 113061165 (MetaQuotes-Demo) · Symbol: EURUSD (M15)
+          </p>
+          <button id="connect" class="text-lime-300 hover:underline">
+            Terminal Status & Info ↗
+          </button>
+        </div>
+
+        <!-- 4 Core Metric Cards -->
+        <section
+          class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label="Account metrics"
+        >
+          <!-- Equity Card -->
+          <article class="panel p-5">
+            <p class="label">Account Equity <span>↗</span></p>
+            <p id="equity-val" class="value">$100,000<span class="text-slate-500">.00</span></p>
+            <p id="equity-subtext" class="mt-3 text-xs text-emerald-400">
+              Balance: $100,000.00
+            </p>
+            <svg
+              viewBox="0 0 240 28"
+              class="mt-4 h-7 w-full"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M0 25 L20 20 40 23 60 13 80 17 100 11 120 15 140 6 160 10 180 4 200 9 220 3 240 1"
+                stroke="#bef264"
+                stroke-width="2"
+                fill="none"
+              />
+            </svg>
+          </article>
+
+          <!-- Today's P&L Card -->
+          <article class="panel p-5">
+            <p class="label">Today's P&L <span>⌁</span></p>
+            <p id="today-pnl" class="value text-emerald-400">+$0.00</p>
+            <p id="today-pnl-pct" class="mt-3 text-xs text-slate-500">
+              <span class="text-emerald-400">+0.00%</span> session return
+            </p>
+            <div class="mt-5 flex h-6 items-end gap-2" aria-hidden="true">
+              <i class="bar h-2"></i><i class="bar h-4"></i>
+              <i class="bar h-3"></i><i class="bar h-5"></i>
+              <i class="bar h-3"></i><i class="bar h-6"></i>
+              <i class="bar h-5"></i>
+            </div>
+          </article>
+
+          <!-- Open Positions Card -->
+          <article class="panel p-5">
+            <p class="label">Open Positions <span>▤</span></p>
+            <p id="positions-count" class="value">
+              0 <span class="text-base text-slate-500">active</span>
+            </p>
+            <p id="positions-sub" class="mt-3 text-xs text-slate-500">
+              0 BUY · 0 SELL
+            </p>
+            <div class="mt-6 grid grid-cols-4 gap-2">
+              <i id="pos-bar-1" class="h-1.5 rounded bg-slate-800 transition-colors"></i>
+              <i id="pos-bar-2" class="h-1.5 rounded bg-slate-800 transition-colors"></i>
+              <i class="h-1.5 rounded bg-slate-800"></i>
+              <i class="h-1.5 rounded bg-slate-800"></i>
+            </div>
+          </article>
+
+          <!-- Daily Drawdown Card -->
+          <article class="panel p-5">
+            <p class="label">Daily Drawdown <span>◈</span></p>
+            <p id="drawdown-val" class="value">0.00<span class="text-slate-500">%</span></p>
+            <p class="mt-3 text-xs text-slate-500">
+              of <span id="limit-label">3.00%</span> circuit breaker limit
+            </p>
+            <div class="mt-6 h-1.5 rounded bg-slate-800 overflow-hidden">
+              <div
+                id="drawdown-bar"
+                class="h-full w-[0%] rounded bg-amber-300 transition-all duration-500"
+              ></div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Middle Section: Chart & Strategy Engine -->
+        <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+          <!-- Equity Curve Section -->
+          <section class="panel min-w-0">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-white/[.04]">
+              <div>
+                <h2>Portfolio Performance</h2>
+                <p class="mt-1 text-xs text-slate-500">
+                  Live account equity curve streaming from MT5
+                </p>
+              </div>
+              <div class="flex gap-1" role="group" aria-label="Chart period">
+                <button class="period selected" data-period="LIVE">Live</button>
+                <button class="period" data-period="1D">1D</button>
+                <button class="period" data-period="1W">1W</button>
+              </div>
+            </div>
+            <div id="chart-equity" class="px-5 pt-4 text-2xl font-medium text-white">
+              $100,000.00
+              <span id="chart-pnl-pill" class="ml-2 text-xs text-lime-300">+0.00%</span>
+            </div>
+            <svg
+              id="chart"
+              viewBox="0 0 800 270"
+              class="my-4 w-full px-2"
+              role="img"
+              aria-label="Real-time equity graph"
+            ></svg>
+            <div
+              class="flex flex-wrap justify-between gap-2 border-t border-white/[.06] px-5 py-4 text-xs text-slate-500"
+            >
+              <span><span class="mr-2 text-lime-300">●</span> Account Equity</span>
+              <span>Baseline: <span id="starting-baseline-text" class="ml-2 text-slate-300">$100,000.00</span></span>
+              <span id="chart-update-time">Streaming live</span>
+            </div>
+          </section>
+
+          <!-- Strategy Engine Panel -->
+          <section id="strategy" class="panel p-5">
+            <div class="flex items-center justify-between">
+              <h2>Strategy Engine</h2>
+              <span id="bot-status-badge" class="rounded px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/20 text-emerald-300">
+                RUNNING
+              </span>
+            </div>
+
+            <!-- Bot Control Button -->
+            <button id="bot-toggle-btn" class="secondary mt-4 w-full flex items-center justify-center gap-2">
+              <span id="toggle-icon">⏸</span> <span id="toggle-text">Pause Trading Bot</span>
+            </button>
+
+            <!-- Live Signal Monitor Card -->
+            <div class="mt-4 rounded-xl bg-black/40 p-4 border border-white/5 space-y-2">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-400">Current Signal:</span>
+                <span id="signal-badge" class="px-2 py-0.5 rounded font-bold text-xs bg-amber-500/20 text-amber-300">
+                  HOLD
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+                <div class="rounded bg-white/5 p-1.5">
+                  <div class="text-[9px] text-slate-500 uppercase">RSI (14)</div>
+                  <div id="signal-rsi" class="text-xs font-semibold text-white">50.0</div>
+                </div>
+                <div class="rounded bg-white/5 p-1.5">
+                  <div class="text-[9px] text-slate-500 uppercase">EMA 50</div>
+                  <div id="signal-ema50" class="text-xs font-semibold text-white">1.1415</div>
+                </div>
+                <div class="rounded bg-white/5 p-1.5">
+                  <div class="text-[9px] text-slate-500 uppercase">ATR</div>
+                  <div id="signal-atr" class="text-xs font-semibold text-white">0.0008</div>
+                </div>
+              </div>
+              <p id="signal-reason" class="text-[10px] text-slate-400 pt-1 leading-tight">
+                Scanning market conditions...
+              </p>
+            </div>
+
+            <label for="strategy-select" class="mt-5 block text-xs text-slate-500">
+              Active Strategy Model
+            </label>
+            <select
+              id="strategy-select"
+              class="mt-1.5 w-full rounded-lg border border-white/10 bg-[#171f28] p-2.5 text-sm text-white focus:outline-none focus:border-lime-300"
+            >
+              <option value="trend">Trend Momentum (EMA + RSI + ATR)</option>
+              <option value="breakout">Regime Breakout (Donchian + ADX)</option>
+            </select>
+            <p id="strategy-desc" class="mt-2 text-xs leading-5 text-slate-400">
+              EMA 50/200 trend alignment, RSI momentum confirmation, and dynamic ATR volatility stops.
+            </p>
+
+            <dl class="mt-4 space-y-3 border-t border-white/5 pt-4 text-xs">
+              <div class="flex justify-between">
+                <dt class="text-slate-500">Target Symbol</dt>
+                <dd id="sidebar-symbol" class="font-medium text-white">EURUSD</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-slate-500">Timeframe</dt>
+                <dd>M15</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-slate-500">Risk per Trade</dt>
+                <dd id="risk-label" class="text-lime-300 font-mono">1.00%</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-slate-500">Target Reward / Risk</dt>
+                <dd class="font-mono">2 : 1</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-slate-500">Breakeven Lock</dt>
+                <dd class="text-emerald-400">At +1.0R Profit</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+
+        <!-- Market Watch Section -->
+        <section id="markets" class="panel overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-white/[.04]">
+            <div>
+              <h2>Market Watch</h2>
+              <p class="mt-1 text-xs text-slate-500">
+                Live prices streaming from MT5 and public ticker feeds
+              </p>
+            </div>
+            <div role="group" aria-label="Market filter" class="flex gap-1">
+              <button class="filter selected" data-filter="all">All Markets</button>
+              <button class="filter" data-filter="forex">Forex</button>
+              <button class="filter" data-filter="crypto">Crypto</button>
+            </div>
+          </div>
+          <div
+            id="market-grid"
+            class="grid gap-px bg-white/[.06] sm:grid-cols-2 xl:grid-cols-4"
+          ></div>
+        </section>
+
+        <!-- Live Positions Section -->
+        <section id="positions" class="panel overflow-hidden">
+          <div class="flex justify-between items-center p-5 border-b border-white/[.04]">
+            <div>
+              <h2>
+                Active Open Positions
+                <span id="positions-table-count" class="ml-2 text-xs text-slate-500">0 active</span>
+              </h2>
+              <p class="mt-1 text-xs text-slate-500">Real-time positions managed by MT5</p>
+            </div>
+            <span class="text-xs text-emerald-400 flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+              Live Synced
+            </span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full whitespace-nowrap text-left text-xs">
+              <thead class="border-y border-white/[.06] text-slate-500 bg-[#0d1218]">
+                <tr>
+                  <th>Ticket</th>
+                  <th>Instrument</th>
+                  <th>Side</th>
+                  <th>Volume</th>
+                  <th>Open Price</th>
+                  <th>Current Price</th>
+                  <th>Stop Loss</th>
+                  <th>Take Profit</th>
+                  <th>P&L (USD)</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="positions-tbody">
+                <tr>
+                  <td colspan="10" class="text-center py-8 text-slate-500">
+                    No open positions at this moment. The trading bot is actively evaluating M15 candles for high-probability setups.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="flex flex-wrap justify-between gap-2 text-[11px] text-slate-600 pt-4">
+          <p><span class="text-lime-300">◈</span> Orbit Workspace · MetaTrader 5 Engine Active.</p>
+          <p>Demo Account 113061165 · MetaQuotes-Demo</p>
+        </footer>
+      </div>
+    </main>
+
+    <!-- Risk Settings Modal -->
+    <dialog id="settings" class="modal">
+      <form id="settings-form">
+        <div class="flex justify-between items-center pb-2 border-b border-white/5">
+          <h2 class="text-lg font-semibold text-white">Risk Management Settings</h2>
+          <button type="button" data-close aria-label="Close" class="text-2xl leading-none text-slate-400 hover:text-white">×</button>
+        </div>
+        <p class="my-4 text-xs leading-5 text-slate-400">
+          Updates risk parameters dynamically in the running bot engine without requiring a restart.
+        </p>
+
+        <div class="space-y-4">
+          <label class="block text-xs font-medium text-slate-300">
+            Risk per Trade (%)
+            <input
+              id="risk-input"
+              type="number"
+              min="0.1"
+              max="5"
+              step="0.1"
+              value="1"
+              required
+              class="mt-1 w-full rounded bg-[#171f28] p-2.5 text-sm text-white border border-white/10"
+            />
+          </label>
+
+          <label class="block text-xs font-medium text-slate-300">
+            Daily Drawdown Limit (%)
+            <input
+              id="limit-input"
+              type="number"
+              min="0.5"
+              max="10"
+              step="0.5"
+              value="3"
+              required
+              class="mt-1 w-full rounded bg-[#171f28] p-2.5 text-sm text-white border border-white/10"
+            />
+          </label>
+
+          <label class="block text-xs font-medium text-slate-300">
+            Strategy Model
+            <select
+              id="modal-strategy-select"
+              class="mt-1 w-full rounded bg-[#171f28] p-2.5 text-sm text-white border border-white/10"
+            >
+              <option value="trend">Trend Momentum (EMA + RSI + ATR)</option>
+              <option value="breakout">Regime Breakout</option>
+            </select>
+          </label>
+        </div>
+
+        <button type="submit" class="primary mt-6 w-full">Save Live Settings</button>
+      </form>
+    </dialog>
+
+    <!-- Connection Info Modal -->
+    <dialog id="connection" class="modal">
+      <div class="flex justify-between items-center pb-2 border-b border-white/5">
+        <h2 class="text-lg font-semibold text-white">MetaTrader 5 Connection Details</h2>
+        <button type="button" data-close aria-label="Close" class="text-2xl leading-none text-slate-400 hover:text-white">×</button>
+      </div>
+      <div class="my-4 text-xs space-y-3 text-slate-300">
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-slate-500">Account:</span>
+          <span class="font-mono text-white">113061165</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-slate-500">Server:</span>
+          <span class="text-white">MetaQuotes-Demo</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-slate-500">Account Type:</span>
+          <span class="text-lime-300 font-semibold">Forex Hedged USD (DEMO)</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+          <span class="text-slate-500">Algo Trading Status:</span>
+          <span id="modal-algo-status" class="text-amber-300 font-semibold">Checking...</span>
+        </div>
+      </div>
+      <div class="p-3 rounded bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 leading-relaxed">
+        Tip: To allow automated order execution, click the <strong>"Algo Trading"</strong> button on your MetaTrader 5 desktop toolbar (or press <strong>Ctrl+E</strong>).
+      </div>
+      <button data-close class="secondary mt-4 w-full">Close</button>
+    </dialog>
+
+    <!-- Notification Toast -->
+    <div
+      id="toast"
+      role="status"
+      class="fixed bottom-5 left-1/2 hidden -translate-x-1/2 rounded-lg border border-lime-300/30 bg-[#162214] px-5 py-3 text-sm text-lime-200 shadow-xl z-[200]"
+    ></div>
+  </body>
+</html>

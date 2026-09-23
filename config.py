@@ -42,5 +42,10 @@ class TradingConfig:
 
     poll_interval_seconds: float = float(os.getenv("POLL_INTERVAL_SECONDS", "5.0"))
 
+    # Web Dashboard JWT Authentication
+    dashboard_username: str = os.getenv("DASHBOARD_USERNAME", "admin")
+    dashboard_password: str = os.getenv("DASHBOARD_PASSWORD", "admin123")
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "orbit_mt5_trading_secure_jwt_token_2026")
+
 
 config = TradingConfig()
