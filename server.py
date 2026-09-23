@@ -283,7 +283,7 @@ def auth_me():
 @require_auth
 def get_status():
     balance, equity = engine.broker.get_balance_and_equity()
-    open_positions = engine.broker.get_positions(config.symbol)
+    open_positions = engine.broker.get_positions("")
 
     account_data = {
         "login": config.mt5_account,
@@ -355,22 +355,31 @@ def get_status():
 @app.route("/api/positions", methods=["GET"])
 @require_auth
 def get_positions():
-    positions = engine.broker.get_positions(config.symbol)
-    result = []
-    for p in positions:
-        result.append({
-            "ticket": p.ticket,
-            "symbol": p.symbol,
-            "order_type": p.order_type,
-            "volume": p.volume,
-            "open_price": p.open_price,
-            "current_price": p.current_price,
-            "sl": p.sl,
-            "tp": p.tp,
-            "profit": round(p.profit, 2),
-            "comment": p.comment,
-        })
-    return jsonify(result)
+    try:
+        positions = engine.broker.get_positions("")
+        result = []
+        for p in positions:
+            profit_val = float(p.profit) if p.profit is not None else 0.0
+            sl_val = float(p.sl) if p.sl is not None else 0.0
+            tp_val = float(p.tp) if p.tp is not None else 0.0
+            open_val = float(p.open_price) if p.open_price is not None else 0.0
+            curr_val = float(p.current_price) if p.current_price is not None else open_val
+            result.append({
+                "ticket": int(p.ticket),
+                "symbol": str(p.symbol),
+                "order_type": str(p.order_type),
+                "volume": float(p.volume),
+                "open_price": round(open_val, 5),
+                "current_price": round(curr_val, 5),
+                "sl": round(sl_val, 5),
+                "tp": round(tp_val, 5),
+                "profit": round(profit_val, 2),
+                "comment": str(p.comment),
+            })
+        return jsonify(result)
+    except Exception as e:
+        logger.exception(f"Error in /api/positions: {e}")
+        return jsonify([])
 
 
 @app.route("/api/markets", methods=["GET"])

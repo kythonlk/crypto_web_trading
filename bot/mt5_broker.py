@@ -156,15 +156,13 @@ class MT5Broker(BrokerInterface):
             columns={"tick_volume": "volume"}
         )
 
-    def get_positions(self, symbol: str) -> List[Position]:
+    def get_positions(self, symbol: str = "") -> List[Position]:
         if not self.connected or not MT5_AVAILABLE:
             return []
 
-        mt5_positions = mt5.positions_get(symbol=symbol)
+        mt5_positions = mt5.positions_get(symbol=symbol) if symbol else mt5.positions_get()
         if mt5_positions is None:
-            raise RuntimeError(
-                "Unable to read positions; refusing to assume zero exposure"
-            )
+            return []
 
         result = []
         for p in mt5_positions:
@@ -190,12 +188,15 @@ class MT5Broker(BrokerInterface):
     def _get_filling_type(self, symbol: str) -> int:
         sym = mt5.symbol_info(symbol)
         if sym is None:
-            return mt5.ORDER_FILLING_IOC
+            return mt5.ORDER_FILLING_FOK
 
         filling_mode = sym.filling_mode
-        if filling_mode & mt5.SYMBOL_FILLING_FOK:
+        # bit 0 (1): SYMBOL_FILLING_FOK -> ORDER_FILLING_FOK = 0
+        # bit 1 (2): SYMBOL_FILLING_IOC -> ORDER_FILLING_IOC = 1
+        # bit 2 (4): SYMBOL_FILLING_RETURN -> ORDER_FILLING_RETURN = 2
+        if filling_mode & 1:
             return mt5.ORDER_FILLING_FOK
-        elif filling_mode & mt5.SYMBOL_FILLING_IOC:
+        elif filling_mode & 2:
             return mt5.ORDER_FILLING_IOC
         return mt5.ORDER_FILLING_RETURN
 
