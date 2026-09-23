@@ -11,10 +11,9 @@ def test_position_sizing_respects_max_risk():
     rm = RiskManager(max_risk_per_trade_pct=1.0)
     equity = 10000.0
     entry_price = 50000.0
-    sl_price = 49500.0  # 500 distance
+    sl_price = 49500.0
     sym_info = {"volume_min": 0.01, "volume_step": 0.01, "volume_max": 10.0}
 
-    # Allowed risk is $100. At 500 distance, volume should be 0.20 lots
     volume = rm.calculate_position_size(equity, entry_price, sl_price, sym_info)
     expected_risk = volume * (entry_price - sl_price)
     assert volume == 0.20
@@ -23,27 +22,29 @@ def test_position_sizing_respects_max_risk():
 
 def test_daily_drawdown_circuit_breaker():
     rm = RiskManager(max_daily_drawdown_pct=3.0)
-    # Day starts at 10,000
+
     assert rm.check_daily_drawdown(10000.0) is True
-    # Equity drops to 9,800 (2% loss - safe)
+
     assert rm.check_daily_drawdown(9800.0) is True
-    # Equity drops to 9,690 (3.1% loss - should halt)
+
     assert rm.check_daily_drawdown(9690.0) is False
-    # Remains halted
+
     assert rm.trading_halted_today is True
 
 
 def test_strategy_indicator_calculation():
-    # Generate 100 bars of synthetic data
+
     prices = [100.0 + i * 0.5 for i in range(100)]
-    df = pd.DataFrame({
-        "time": pd.date_range("2025-01-01", periods=100, freq="15min"),
-        "open": prices,
-        "high": [p + 1.0 for p in prices],
-        "low": [p - 1.0 for p in prices],
-        "close": prices,
-        "volume": [100.0] * 100,
-    })
+    df = pd.DataFrame(
+        {
+            "time": pd.date_range("2025-01-01", periods=100, freq="15min"),
+            "open": prices,
+            "high": [p + 1.0 for p in prices],
+            "low": [p - 1.0 for p in prices],
+            "close": prices,
+            "volume": [100.0] * 100,
+        }
+    )
 
     ind = TrendMomentumStrategy.calculate_indicators(df, fast_ema=20, slow_ema=50)
     assert "ema_fast" in ind.columns
@@ -58,14 +59,16 @@ def test_breakeven_trigger_moves_stop_loss():
     broker.connect()
     tracker = PositionTracker(broker=broker, breakeven_r_trigger=1.0)
 
-    # Place a BUY order at 50,000, SL at 49,000 (risk = 1000)
     broker.set_simulated_price(50000.0)
-    ticket = broker.place_order(symbol="BTCUSDT", order_type="BUY", volume=0.1, sl=49000.0, tp=53000.0)
+    ticket = broker.place_order(
+        symbol="BTCUSDT", order_type="BUY", volume=0.1, sl=49000.0, tp=53000.0
+    )
     tracker.register_position(ticket, open_price=50000.0, initial_sl=49000.0)
 
-    # Price moves to 51,500 (+1.5R)
     broker.set_simulated_price(51500.0)
     tracker.update_positions("BTCUSDT", current_atr=200.0)
 
     pos = broker.get_positions("BTCUSDT")[0]
-    assert pos.sl >= 50000.0, f"Stop loss should be moved to breakeven or above, got {pos.sl}"
+    assert (
+        pos.sl >= 50000.0
+    ), f"Stop loss should be moved to breakeven or above, got {pos .sl }"

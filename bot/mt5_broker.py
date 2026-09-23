@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import Optional, List, Dict
 import pandas as pd
 from .broker_interface import BrokerInterface, Position
@@ -28,10 +29,6 @@ if MT5_AVAILABLE:
 
 
 class MT5Broker(BrokerInterface):
-    """
-    Production MetaTrader 5 execution engine with automatic filling mode detection,
-    volume normalization, and order retry handling.
-    """
 
     def __init__(
         self,
@@ -50,7 +47,9 @@ class MT5Broker(BrokerInterface):
 
     def connect(self) -> bool:
         if not MT5_AVAILABLE:
-            logger.error("MetaTrader5 python package is not installed. Run 'pip install MetaTrader5'.")
+            logger.error(
+                "MetaTrader5 python package is not installed. Run 'pip install MetaTrader5'."
+            )
             return False
 
         init_kwargs = {}
@@ -62,21 +61,45 @@ class MT5Broker(BrokerInterface):
             init_kwargs["server"] = self.server
 
         if not mt5.initialize(**init_kwargs):
-            logger.error(f"MT5 initialize failed: {mt5.last_error()}")
+            logger.error(f"MT5 initialize failed: {mt5 .last_error ()}")
             return False
 
         account_info = mt5.account_info()
         if account_info is None:
-            logger.error(f"Failed to fetch MT5 account info: {mt5.last_error()}")
+            logger.error(f"Failed to fetch MT5 account info: {mt5 .last_error ()}")
+            return False
+
+        # Real account? Hard pass.
+        if (
+            not self.account
+            or account_info.login != self.account
+            or account_info.trade_mode != mt5.ACCOUNT_TRADE_MODE_DEMO
+        ):
+            logger.error("Only the explicitly configured DEMO account is permitted.")
+            mt5.shutdown()
             return False
 
         logger.info(
-            f"Connected to MT5 - Account: {account_info.login}, "
-            f"Server: {account_info.server}, Currency: {account_info.currency}, "
-            f"Balance: {account_info.balance:.2f}"
+            f"Connected to MT5 - Account: {account_info .login }, "
+            f"Server: {account_info .server }, Currency: {account_info .currency }, "
+            f"Balance: {account_info .balance :.2f}"
         )
         self.connected = True
         return True
+
+    def demo_trade_allowed(self):
+        info = mt5.account_info()
+        terminal = mt5.terminal_info()
+        return bool(
+            info
+            and terminal
+            and info.login == self.account
+            and info.trade_mode == mt5.ACCOUNT_TRADE_MODE_DEMO
+            and info.trade_allowed
+            and info.trade_expert
+            and terminal.trade_allowed
+            and not terminal.tradeapi_disabled
+        )
 
     def disconnect(self) -> None:
         if MT5_AVAILABLE and self.connected:
@@ -96,13 +119,12 @@ class MT5Broker(BrokerInterface):
         if not self.connected or not MT5_AVAILABLE:
             return None
 
-        # Ensure symbol is visible in Market Watch
         if not mt5.symbol_select(symbol, True):
-            logger.warning(f"Failed to select symbol {symbol} in MT5 Market Watch.")
+            logger.warning(f"Failed to select symbol {symbol } in MT5 Market Watch.")
 
         s = mt5.symbol_info(symbol)
         if s is None:
-            logger.error(f"Symbol {symbol} not found in MT5.")
+            logger.error(f"Symbol {symbol } not found in MT5.")
             return None
 
         return {
@@ -114,6 +136,8 @@ class MT5Broker(BrokerInterface):
             "volume_min": s.volume_min,
             "volume_step": s.volume_step,
             "volume_max": s.volume_max,
+            "trade_tick_size": s.trade_tick_size,
+            "trade_tick_value_loss": s.trade_tick_value_loss,
         }
 
     def get_candles(self, symbol: str, timeframe: str, count: int) -> pd.DataFrame:
@@ -121,9 +145,9 @@ class MT5Broker(BrokerInterface):
             return pd.DataFrame()
 
         tf = TIMEFRAME_MAP.get(timeframe.upper(), mt5.TIMEFRAME_M15)
-        rates = mt5.copy_rates_from_pos(symbol, tf, 0, count)
+        rates = mt5.copy_rates_from_pos(symbol, tf, 1, count)
         if rates is None or len(rates) == 0:
-            logger.error(f"Failed to copy rates for {symbol}: {mt5.last_error()}")
+            logger.error(f"Failed to copy rates for {symbol }: {mt5 .last_error ()}")
             return pd.DataFrame()
 
         df = pd.DataFrame(rates)
@@ -138,7 +162,9 @@ class MT5Broker(BrokerInterface):
 
         mt5_positions = mt5.positions_get(symbol=symbol)
         if mt5_positions is None:
-            return []
+            raise RuntimeError(
+                "Unable to read positions; refusing to assume zero exposure"
+            )
 
         result = []
         for p in mt5_positions:
@@ -185,15 +211,21 @@ class MT5Broker(BrokerInterface):
         if not self.connected or not MT5_AVAILABLE:
             return None
 
+        if not self.demo_trade_allowed() or order_type.upper() not in ("BUY", "SELL"):
+            return None
+
         sym_info = self.get_symbol_info(symbol)
         if not sym_info:
             return None
 
-        # Round volume to broker specifications
         step = sym_info["volume_step"]
-        volume = round(volume / step) * step
-        volume = max(sym_info["volume_min"], min(volume, sym_info["volume_max"]))
-        volume = round(volume, 2)
+        if not math.isfinite(volume) or step <= 0:
+            return None
+        volume = round(
+            math.floor(min(volume, sym_info["volume_max"]) / step + 1e-9) * step, 8
+        )
+        if volume < sym_info["volume_min"]:
+            return None
 
         digits = sym_info["digits"]
         sl = round(sl, digits)
@@ -207,6 +239,11 @@ class MT5Broker(BrokerInterface):
             price = sym_info["bid"]
 
         filling = self._get_filling_type(symbol)
+
+        if not all(math.isfinite(x) and x > 0 for x in (price, sl, tp)):
+            return None
+        if not (sl < price < tp if order_type.upper() == "BUY" else tp < price < sl):
+            return None
 
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
@@ -223,27 +260,37 @@ class MT5Broker(BrokerInterface):
             "type_filling": filling,
         }
 
+        check = mt5.order_check(request)
+        if check is None or check.retcode != 0:
+            logger.error("Broker rejected order preflight")
+            return None
         result = mt5.order_send(request)
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             err = result.comment if result else mt5.last_error()
-            logger.error(f"Order send failed ({order_type} {volume} {symbol}): {err}")
+            logger.error(
+                f"Order send failed ({order_type } {volume } {symbol }): {err }"
+            )
             return None
 
-        logger.info(f"Order placed successfully: Ticket #{result.order} ({order_type} @ {price:.{digits}f})")
+        logger.info(
+            f"Order placed successfully: Ticket #{result .order } ({order_type } @ {price :.{digits }f})"
+        )
         return result.order
 
     def modify_position(self, ticket: int, sl: float, tp: float) -> bool:
         if not self.connected or not MT5_AVAILABLE:
             return False
+        if not self.demo_trade_allowed():
+            return False
 
         position = None
-        for p in mt5.positions_get():
-            if p.ticket == ticket:
+        for p in mt5.positions_get() or ():
+            if p.ticket == ticket and p.magic == self.magic_number:
                 position = p
                 break
 
         if position is None:
-            logger.warning(f"Cannot modify: Position #{ticket} not found.")
+            logger.warning(f"Cannot modify: Position #{ticket } not found.")
             return False
 
         sym_info = self.get_symbol_info(position.symbol)
@@ -259,30 +306,40 @@ class MT5Broker(BrokerInterface):
 
         result = mt5.order_send(request)
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-            logger.info(f"Position #{ticket} SL/TP updated: SL={sl:.{digits}f}, TP={tp:.{digits}f}")
+            logger.info(
+                f"Position #{ticket } SL/TP updated: SL={sl :.{digits }f}, TP={tp :.{digits }f}"
+            )
             return True
 
         err = result.comment if result else mt5.last_error()
-        logger.error(f"Failed to modify position #{ticket}: {err}")
+        logger.error(f"Failed to modify position #{ticket }: {err }")
         return False
 
     def close_position(self, ticket: int) -> bool:
         if not self.connected or not MT5_AVAILABLE:
             return False
+        if not self.demo_trade_allowed():
+            return False
 
         pos = None
-        for p in mt5.positions_get():
-            if p.ticket == ticket:
+        for p in mt5.positions_get() or ():
+            if p.ticket == ticket and p.magic == self.magic_number:
                 pos = p
                 break
 
         if pos is None:
-            logger.warning(f"Cannot close: Position #{ticket} not found.")
+            logger.warning(f"Cannot close: Position #{ticket } not found.")
             return False
 
-        close_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.ORDER_TYPE_BUY else mt5.ORDER_TYPE_BUY
+        close_type = (
+            mt5.ORDER_TYPE_SELL
+            if pos.type == mt5.ORDER_TYPE_BUY
+            else mt5.ORDER_TYPE_BUY
+        )
         sym_info = self.get_symbol_info(pos.symbol)
-        price = sym_info["bid"] if close_type == mt5.ORDER_TYPE_SELL else sym_info["ask"]
+        price = (
+            sym_info["bid"] if close_type == mt5.ORDER_TYPE_SELL else sym_info["ask"]
+        )
         filling = self._get_filling_type(pos.symbol)
 
         request = {
@@ -301,8 +358,10 @@ class MT5Broker(BrokerInterface):
 
         result = mt5.order_send(request)
         if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-            logger.info(f"Position #{ticket} closed at {price}")
+            logger.info(f"Position #{ticket } closed at {price }")
             return True
 
-        logger.error(f"Failed to close position #{ticket}: {result.comment if result else mt5.last_error()}")
+        logger.error(
+            f"Failed to close position #{ticket }: {result .comment if result else mt5 .last_error ()}"
+        )
         return False

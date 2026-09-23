@@ -8,6 +8,7 @@ from bot.mt5_broker import MT5Broker
 from bot.mock_broker import PublicApiMockBroker
 from bot.risk_manager import RiskManager
 from bot.strategy import TrendMomentumStrategy
+from bot.regime_strategy import RegimeBreakoutStrategy
 from bot.position_tracker import PositionTracker
 
 logging.basicConfig(
@@ -21,8 +22,8 @@ logger = logging.getLogger("MainBot")
 class TradingBot:
     def __init__(self):
         self.running = False
+        self.last_bar = None
 
-        # 1. Instantiate appropriate broker engine
         if config.bot_mode == "MT5":
             logger.info("Initializing Live MetaTrader 5 Engine...")
             self.broker: BrokerInterface = MT5Broker(
@@ -32,20 +33,28 @@ class TradingBot:
                 path=config.mt5_path,
             )
         else:
-            logger.info(f"Initializing Public API Paper Broker (Symbol: {config.symbol})...")
+            logger.info(
+                f"Initializing Public API Paper Broker (Symbol: {config .symbol })..."
+            )
             self.broker: BrokerInterface = PublicApiMockBroker(
                 initial_balance=10000.0,
                 symbol=config.symbol,
             )
 
-        # 2. Risk & Strategy subsystems
         self.risk_manager = RiskManager(
             max_risk_per_trade_pct=config.max_risk_per_trade_pct,
             max_daily_drawdown_pct=config.max_daily_drawdown_pct,
             max_spread_points=config.max_spread_points,
             max_open_positions=config.max_open_positions,
         )
-        self.strategy = TrendMomentumStrategy(
+        if config.strategy not in ("trend", "breakout"):
+            raise ValueError("STRATEGY must be trend or breakout")
+        strategy_class = (
+            RegimeBreakoutStrategy
+            if config.strategy == "breakout"
+            else TrendMomentumStrategy
+        )
+        self.strategy = strategy_class(
             atr_multiplier_sl=config.atr_multiplier_sl,
             risk_reward_ratio=config.risk_reward_ratio,
         )
@@ -62,11 +71,14 @@ class TradingBot:
 
         self.running = True
         logger.info("=" * 60)
-        logger.info(f"TRADING BOT STARTED | Mode: {config.bot_mode} | Symbol: {config.symbol}")
-        logger.info(f"Risk Rules: Max {config.max_risk_per_trade_pct}%/trade | Max Daily DD: {config.max_daily_drawdown_pct}% | R:R: 1:{config.risk_reward_ratio}")
+        logger.info(
+            f"TRADING BOT STARTED | Mode: {config .bot_mode } | Symbol: {config .symbol }"
+        )
+        logger.info(
+            f"Risk Rules: Max {config .max_risk_per_trade_pct }%/trade | Max Daily DD: {config .max_daily_drawdown_pct }% | R:R: 1:{config .risk_reward_ratio }"
+        )
         logger.info("=" * 60)
 
-        # Register signals for graceful shutdown
         signal.signal(signal.SIGINT, self._handle_exit)
         signal.signal(signal.SIGTERM, self._handle_exit)
 
@@ -76,7 +88,7 @@ class TradingBot:
                 iteration += 1
                 self._run_iteration(iteration)
             except Exception as e:
-                logger.exception(f"Unexpected error in trading loop: {e}")
+                logger.exception(f"Unexpected error in trading loop: {e }")
 
             time.sleep(config.poll_interval_seconds)
 
@@ -89,28 +101,26 @@ class TradingBot:
         sym_info = self.broker.get_symbol_info(config.symbol)
 
         if not sym_info:
-            logger.warning(f"Could not retrieve symbol info for {config.symbol}")
+            logger.warning(f"Could not retrieve symbol info for {config .symbol }")
             return
 
-        # Fetch recent market candles
-        candles = self.broker.get_candles(config.symbol, config.timeframe, count=100)
+        candles = self.broker.get_candles(config.symbol, config.timeframe, count=400)
         signal = self.strategy.evaluate(candles, config.symbol)
 
-        # 1. Update active positions (apply breakeven locks & trailing stops)
         self.tracker.update_positions(config.symbol, current_atr=signal.atr)
+        if candles.empty or candles.iloc[-1]["time"] == self.last_bar:
+            return
+        self.last_bar = candles.iloc[-1]["time"]
 
-        # Periodic status logging
         if iteration % 6 == 1:
             logger.info(
-                f"[STATUS] Balance: ${balance:,.2f} | Equity: ${equity:,.2f} | "
-                f"Open Positions: {len(open_positions)}/{config.max_open_positions} | Signal: {signal.action}"
+                f"[STATUS] Balance: ${balance :,.2f} | Equity: ${equity :,.2f} | "
+                f"Open Positions: {len (open_positions )}/{config .max_open_positions } | Signal: {signal .action }"
             )
 
-        # 2. Check if we have a trade signal
         if signal.action not in ["BUY", "SELL"]:
             return
 
-        # 3. Capital Preservation Gate: Check risk limits
         can_trade = self.risk_manager.can_open_new_trade(
             current_equity=equity,
             open_positions_count=len(open_positions),
@@ -119,10 +129,9 @@ class TradingBot:
         if not can_trade:
             return
 
-        # 4. Calculate dynamic position size based on exact 1% equity risk
         volume = self.risk_manager.calculate_position_size(
             equity=equity,
-            entry_price=signal.entry_price,
+            entry_price=sym_info["ask"] if signal.action == "BUY" else sym_info["bid"],
             sl_price=signal.sl_price,
             symbol_info=sym_info,
         )
@@ -130,7 +139,6 @@ class TradingBot:
             logger.warning("Calculated volume is zero or invalid. Trade aborted.")
             return
 
-        # 5. Execute Order
         ticket = self.broker.place_order(
             symbol=config.symbol,
             order_type=signal.action,

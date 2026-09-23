@@ -1,73 +1,39 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body{
-        overflow-x: hidden;
-    }
-    .widget-container {
-      margin: 20px;
-    }
-  </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbit | Trading workspace</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"><script src="app.js" defer></script>
 </head>
-<body>
-<div class="row p-4">
-    <div class="d-flex justify-content-center">
-        <h1>Trade Crypto with Our bot and earn tons of money</h1>
-    </div>
+<body class="bg-[#090d12] text-slate-300">
+<aside class="fixed inset-y-0 hidden w-56 flex-col border-r border-white/[.07] bg-[#0d1218] p-6 lg:flex">
+<a href="#overview" class="mb-12 flex items-center gap-3 text-2xl font-bold text-white"><span class="rounded-lg bg-lime-300 px-2 text-slate-950">◈</span> orbit.</a>
+<p class="mb-4 text-[10px] uppercase tracking-[.2em] text-slate-600">Workspace</p>
+<nav class="space-y-2 text-sm" aria-label="Main"><a class="nav active" href="#overview">▦ <span>Overview</span></a><a class="nav" href="#markets">⌁ <span>Markets</span></a><a class="nav" href="#positions">▤ <span>Positions</span></a><a class="nav" href="#strategy">◇ <span>Strategy lab</span></a><button class="nav w-full" data-settings>⚙ <span>Risk settings</span></button></nav>
+<div class="mt-auto rounded-xl border border-lime-300/15 bg-lime-300/[.03] p-4"><p class="text-xs text-lime-300">● Demo environment</p><p class="mt-2 text-xs leading-5 text-slate-500">Test your edge.<br>Keep real capital out of it.</p></div><div class="mt-6 border-t border-white/10 pt-5 text-xs">Trading workspace<p class="mt-1 text-slate-600">Local preview</p></div>
+</aside>
+<main class="lg:ml-56">
+<header class="flex h-20 items-center justify-between border-b border-white/[.07] px-6 md:px-9"><p class="text-xs text-slate-500">Workspace <span class="mx-3">/</span><span class="text-slate-200">Overview</span></p><div class="flex items-center gap-4"><span class="rounded border border-amber-300/20 bg-amber-300/5 px-2 py-1 text-[10px] tracking-widest text-amber-200">PREVIEW DATA</span><span id="clock" class="hidden text-xs text-slate-500 sm:block"></span></div></header>
+<div id="overview" class="mx-auto max-w-[1600px] space-y-6 p-5 md:p-9">
+<section class="flex flex-wrap items-center justify-between gap-4"><div><p class="mb-2 text-[10px] tracking-[.2em] text-lime-300">YOUR EDGE, IN FOCUS</p><h1 class="text-3xl font-semibold text-white">Trading overview</h1><p class="mt-2 text-sm text-slate-500">Your markets, strategies, and exposure. All in one place.</p></div><div class="flex gap-3"><button id="export" class="secondary">↓ Export snapshot</button><button data-settings class="primary">⚙ Configure preview</button></div></section>
+<div class="flex flex-wrap justify-between gap-2 rounded-lg border border-white/[.07] bg-[#10161e] px-4 py-3 text-xs"><p class="text-slate-400"><span class="mr-2 text-amber-300">●</span> MT5 disconnected <span class="mx-2 text-slate-600">/</span> Sample figures. No orders are being placed.</p><button id="connect" class="text-lime-300">Connection details ↗</button></div>
+<section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Illustrative account metrics">
+<article class="panel p-5"><p class="label">Account equity <span>↗</span></p><p class="value">$10,482<span class="text-slate-500">.65</span></p><p class="mt-3 text-xs text-emerald-400">+$482.65 <span class="ml-2 text-slate-500">sample total return</span></p><svg viewBox="0 0 240 28" class="mt-4 h-7 w-full" preserveAspectRatio="none" aria-hidden="true"><path d="M0 25 L20 20 40 23 60 13 80 17 100 11 120 15 140 6 160 10 180 4 200 9 220 3 240 1" stroke="#bef264" stroke-width="2" fill="none"/></svg></article>
+<article class="panel p-5"><p class="label">Today's P&L <span>⌁</span></p><p class="value text-emerald-400">+$128.40</p><p class="mt-3 text-xs text-slate-500"><span class="text-emerald-400">+1.24%</span> sample daily return</p><div class="mt-5 flex h-6 items-end gap-2" aria-hidden="true"><i class="bar h-2"></i><i class="bar h-4"></i><i class="bar h-3"></i><i class="bar h-5"></i><i class="bar h-3"></i><i class="bar h-6"></i><i class="bar h-5"></i></div></article>
+<article class="panel p-5"><p class="label">Open positions <span>▤</span></p><p class="value">2 <span class="text-base text-slate-500">examples</span></p><p class="mt-3 text-xs text-slate-500">1 crypto <span class="mx-2">·</span> 1 forex</p><div class="mt-6 grid grid-cols-4 gap-2"><i class="h-1.5 rounded bg-lime-300"></i><i class="h-1.5 rounded bg-lime-300"></i><i class="h-1.5 rounded bg-slate-800"></i><i class="h-1.5 rounded bg-slate-800"></i></div></article>
+<article class="panel p-5"><p class="label">Daily drawdown <span>◈</span></p><p class="value">0.42<span class="text-slate-500">%</span></p><p class="mt-3 text-xs text-slate-500">of <span id="limit-label">3.00%</span> preview limit</p><div class="mt-6 h-1.5 rounded bg-slate-800"><div id="drawdown" class="h-full w-[14%] rounded bg-amber-200"></div></div></article>
+</section>
+<div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_310px]">
+<section class="panel min-w-0"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><div><h2>Portfolio performance</h2><p class="mt-1 text-xs text-slate-500">Illustrative equity curve · USD</p></div><div class="flex gap-1" role="group" aria-label="Chart period"><button class="period" data-period="1D">1D</button><button class="period" data-period="1W">1W</button><button class="period selected" data-period="1M">1M</button><button class="period" data-period="ALL">All</button></div></div><div class="px-5 text-2xl font-medium text-white">$10,482.65 <span class="ml-2 text-xs text-lime-300">+4.83% sample</span></div><svg id="chart" viewBox="0 0 800 270" class="my-5 w-full" role="img" aria-label="Illustrative equity, not actual trading performance"></svg><div class="flex flex-wrap justify-between gap-2 border-t border-white/[.06] px-5 py-4 text-xs text-slate-500"><span><span class="mr-2 text-lime-300">●</span> Account equity</span><span>Starting balance <span class="ml-2 text-slate-300">$10,000.00</span></span><span>Not a forecast</span></div></section>
+<section id="strategy" class="panel p-5"><div class="flex justify-between"><h2>Strategy engine</h2><span class="text-[10px] text-slate-500">OFFLINE</span></div><label for="strategy-select" class="mt-6 block text-xs text-slate-500">Preview strategy</label><select id="strategy-select" class="mt-2 w-full rounded-lg border border-white/10 bg-[#171f28] p-3 text-sm text-white"><option value="trend">Trend momentum</option><option value="breakout">Regime breakout · experimental</option></select><p id="strategy-desc" class="mt-3 h-10 text-xs leading-5 text-slate-500">EMA trend alignment, RSI momentum, and ATR stops.</p><dl class="mt-5 space-y-4 text-xs"><div class="flex justify-between"><dt class="text-slate-500">Timeframe</dt><dd>M15 · Closed candles</dd></div><div class="flex justify-between"><dt class="text-slate-500">Risk per trade</dt><dd id="risk-label">1.00%</dd></div><div class="flex justify-between"><dt class="text-slate-500">Target reward / risk</dt><dd>2 : 1</dd></div><div class="flex justify-between"><dt class="text-slate-500">Execution</dt><dd class="text-amber-200">Demo only</dd></div></dl><p class="mt-5 rounded-lg bg-black/20 p-3 text-xs leading-5 text-slate-500">Awaiting MT5 connection. Both strategies require historical and forward testing.</p></section>
 </div>
-<div class="widget-container">
-  <div class="tradingview-widget-container p-4">
-    <div class="d-flex justify-content-center">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-    {
-      "symbol": "BINANCE:BTCUSDT",
-      "width": 1000,
-      "height": 400,
-      "locale": "en",
-      "dateRange": "1M",
-      "colorTheme": "dark",
-      "trendLineColor": "rgba(41, 98, 255, 1)",
-      "underLineColor": "rgba(41, 98, 255, 0.3)",
-      "underLineBottomColor": "rgba(41, 98, 255, 0)",
-      "isTransparent": false,
-      "autosize": true,
-      "largeChartUrl": ""
-    }
-    </script>
-  </div>
-</div>
-
-<div class="container mt-5">
-    <h2>Trade Amount Table</h2>
-    <table class="table table-bordered p-4">
-      <thead>
-        <tr>
-          <th class="col-md-4 text-center">Enter amount You want to trade</th>
-          <th class="col-md-8 text-center">After Trade with our bot</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="text-center">
-            <div class="input-group">
-                <input type="number" step="0.01" class="form-control" id="tradeAmount" placeholder="Amount" oninput="calculateOutput()" />
-                <span class="input-group-text">$</span>
-              </div>
-          </td>
-          <td  class="text-center"><span id="outputValue">0.00</span> $</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="./cal.js" async></script>
-</body>
-</html>
+<section id="markets" class="panel overflow-hidden"><div class="flex flex-wrap items-center justify-between gap-3 p-5"><div><h2>Market watch</h2><p class="mt-1 text-xs text-slate-500">Forex & crypto · sample quotes</p></div><div role="group" aria-label="Market filter"><button class="filter selected" data-filter="all">All markets</button><button class="filter" data-filter="crypto">Crypto</button><button class="filter" data-filter="forex">Forex</button></div></div><div id="market-grid" class="grid gap-px bg-white/[.06] sm:grid-cols-2 xl:grid-cols-4"></div></section>
+<section id="positions" class="panel overflow-hidden"><div class="flex justify-between p-5"><h2>Open positions <span class="ml-2 text-xs text-slate-500">2 examples</span></h2><span class="text-xs text-slate-500">Simulated entries</span></div><div class="overflow-x-auto"><table class="w-full whitespace-nowrap text-left text-xs"><thead class="border-y border-white/[.06] text-slate-500"><tr><th>Instrument</th><th>Side</th><th>Volume</th><th>Entry</th><th>Stop loss</th><th>Take profit</th><th>P&L</th></tr></thead><tbody><tr><td class="text-white">BTC / USD</td><td class="text-emerald-400">BUY</td><td>0.01 lot</td><td>63,240.00</td><td>62,480.00</td><td>64,760.00</td><td class="text-emerald-400">+$12.85</td></tr><tr><td class="text-white">EUR / USD</td><td class="text-emerald-400">BUY</td><td>0.10 lot</td><td>1.08320</td><td>1.08020</td><td>1.08920</td><td class="text-emerald-400">+$24.50</td></tr></tbody></table></div></section>
+<footer class="flex flex-wrap justify-between gap-2 text-[11px] text-slate-600"><p><span class="text-lime-300">◈</span> Orbit workspace / Demo first.</p><p>Preview only · No account connected</p></footer>
+</div></main>
+<dialog id="settings" class="modal"><form id="settings-form"><div class="flex justify-between"><h2>Preview risk settings</h2><button type="button" data-close aria-label="Close">×</button></div><p class="my-5 text-sm leading-6 text-slate-400">Updates this page only. Python bot settings stay in your local configuration.</p><label class="block text-sm">Risk per trade (%)<input id="risk" type="number" min="0.1" max="2" step="0.1" value="1" required></label><label class="mt-4 block text-sm">Daily drawdown limit (%)<input id="limit" type="number" min="0.5" max="10" step="0.5" value="3" required></label><button class="primary mt-5 w-full">Save preview settings</button></form></dialog>
+<dialog id="connection" class="modal"><h2>Connect your demo terminal</h2><p class="my-5 text-sm leading-6 text-slate-400">The bot needs the exact broker server name and an installed MT5 terminal. Keep credentials in a private .env file. This dashboard does not collect passwords or connect to MT5.</p><button data-close class="secondary w-full">Got it</button></dialog>
+<div id="toast" role="status" class="fixed bottom-5 left-1/2 hidden -translate-x-1/2 rounded-lg border border-lime-300/20 bg-[#1a241a] px-5 py-3 text-sm text-lime-200"></div>
+</body></html>

@@ -7,11 +7,6 @@ logger = logging.getLogger("PositionTracker")
 
 
 class PositionTracker:
-    """
-    Monitors active positions in real-time.
-    Implements automatic Breakeven locks and Trailing Stops to eliminate downside risk
-    once a trade has established favorable momentum.
-    """
 
     def __init__(
         self,
@@ -22,24 +17,26 @@ class PositionTracker:
         self.broker = broker
         self.breakeven_r = breakeven_r_trigger
         self.trailing_enabled = trailing_stop_enabled
-        # Cache initial risk distance per ticket: {ticket: initial_risk}
+
         self.initial_risks: Dict[int, float] = {}
 
     def register_position(self, ticket: int, open_price: float, initial_sl: float):
-        """Record initial risk distance when an order is opened."""
+
         if initial_sl > 0:
             risk = abs(open_price - initial_sl)
             self.initial_risks[ticket] = risk
-            logger.info(f"Position #{ticket} registered with initial risk distance: {risk:.2f}")
+            logger.info(
+                f"Position #{ticket } registered with initial risk distance: {risk :.2f}"
+            )
 
     def update_positions(self, symbol: str, current_atr: float = 0.0):
-        """Iterate active positions and apply breakeven or trailing stop adjustments."""
+
         positions = self.broker.get_positions(symbol)
         if not positions:
             return
 
         for pos in positions:
-            # Fallback if ticket wasn't registered upfront
+
             if pos.ticket not in self.initial_risks and pos.sl > 0:
                 self.initial_risks[pos.ticket] = abs(pos.open_price - pos.sl)
 
@@ -54,24 +51,21 @@ class PositionTracker:
                 favorable_move = current_price - open_price
                 r_multiple = favorable_move / risk_dist
 
-                # 1. Breakeven Check
-                # If price >= entry + 1R, move SL to entry + 0.1R buffer to cover commissions/spread
                 if r_multiple >= self.breakeven_r and pos.sl < open_price:
                     new_sl = open_price + (risk_dist * 0.05)
                     logger.info(
-                        f"[BREAKEVEN TRIGGER] Position #{pos.ticket} (BUY) hit {r_multiple:.2f}R. "
-                        f"Moving SL from {pos.sl:.2f} to Breakeven {new_sl:.2f} to guarantee risk-free trade."
+                        f"[BREAKEVEN TRIGGER] Position #{pos .ticket } (BUY) hit {r_multiple :.2f}R. "
+                        f"Moving SL from {pos .sl :.2f} to Breakeven {new_sl :.2f} to guarantee risk-free trade."
                     )
                     self.broker.modify_position(pos.ticket, sl=new_sl, tp=pos.tp)
                     pos.sl = new_sl
 
-                # 2. Trailing Stop Check (if price exceeds 1.5R)
                 elif self.trailing_enabled and r_multiple >= 1.5 and current_atr > 0:
                     trail_sl = current_price - (current_atr * 1.5)
                     if trail_sl > pos.sl:
                         logger.info(
-                            f"[TRAILING STOP] Position #{pos.ticket} (BUY) at {current_price:.2f}. "
-                            f"Trailing SL adjusted from {pos.sl:.2f} to {trail_sl:.2f}."
+                            f"[TRAILING STOP] Position #{pos .ticket } (BUY) at {current_price :.2f}. "
+                            f"Trailing SL adjusted from {pos .sl :.2f} to {trail_sl :.2f}."
                         )
                         self.broker.modify_position(pos.ticket, sl=trail_sl, tp=pos.tp)
                         pos.sl = trail_sl
@@ -80,23 +74,23 @@ class PositionTracker:
                 favorable_move = open_price - current_price
                 r_multiple = favorable_move / risk_dist
 
-                # 1. Breakeven Check
-                if r_multiple >= self.breakeven_r and (pos.sl == 0 or pos.sl > open_price):
+                if r_multiple >= self.breakeven_r and (
+                    pos.sl == 0 or pos.sl > open_price
+                ):
                     new_sl = open_price - (risk_dist * 0.05)
                     logger.info(
-                        f"[BREAKEVEN TRIGGER] Position #{pos.ticket} (SELL) hit {r_multiple:.2f}R. "
-                        f"Moving SL from {pos.sl:.2f} to Breakeven {new_sl:.2f} to guarantee risk-free trade."
+                        f"[BREAKEVEN TRIGGER] Position #{pos .ticket } (SELL) hit {r_multiple :.2f}R. "
+                        f"Moving SL from {pos .sl :.2f} to Breakeven {new_sl :.2f} to guarantee risk-free trade."
                     )
                     self.broker.modify_position(pos.ticket, sl=new_sl, tp=pos.tp)
                     pos.sl = new_sl
 
-                # 2. Trailing Stop Check
                 elif self.trailing_enabled and r_multiple >= 1.5 and current_atr > 0:
                     trail_sl = current_price + (current_atr * 1.5)
                     if pos.sl == 0 or trail_sl < pos.sl:
                         logger.info(
-                            f"[TRAILING STOP] Position #{pos.ticket} (SELL) at {current_price:.2f}. "
-                            f"Trailing SL adjusted from {pos.sl:.2f} to {trail_sl:.2f}."
+                            f"[TRAILING STOP] Position #{pos .ticket } (SELL) at {current_price :.2f}. "
+                            f"Trailing SL adjusted from {pos .sl :.2f} to {trail_sl :.2f}."
                         )
                         self.broker.modify_position(pos.ticket, sl=trail_sl, tp=pos.tp)
                         pos.sl = trail_sl

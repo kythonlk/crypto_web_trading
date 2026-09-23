@@ -10,11 +10,6 @@ logger = logging.getLogger("MockBroker")
 
 
 class PublicApiMockBroker(BrokerInterface):
-    """
-    Simulation / Paper-trading broker using public market data API (e.g., Binance public API)
-    or high-fidelity synthetic market generation.
-    Supports real-time SL/TP trigger simulation, equity updates, and zero risk testing.
-    """
 
     def __init__(self, initial_balance: float = 10000.0, symbol: str = "BTCUSDT"):
         self.initial_balance = initial_balance
@@ -29,22 +24,26 @@ class PublicApiMockBroker(BrokerInterface):
         self.spread_points = 10.0
 
     def set_simulated_price(self, price: float):
-        """Allows tests and paper simulations to inject controlled prices."""
+
         self.simulated_price = price
         self.last_price = price
 
     def clear_simulated_price(self):
-        """Clears simulated price to resume live API polling."""
+
         self.simulated_price = None
 
     def connect(self) -> bool:
         self.connected = True
-        logger.info(f"Connected to Public API Mock Broker. Starting Paper Balance: ${self.balance:,.2f}")
-        # Test connection with a public ticker probe
+        logger.info(
+            f"Connected to Public API Mock Broker. Starting Paper Balance: ${self .balance :,.2f}"
+        )
+
         try:
             self._fetch_live_ticker(self.symbol)
         except Exception as e:
-            logger.warning(f"Could not reach public ticker immediately ({e}), using default price feed.")
+            logger.warning(
+                f"Could not reach public ticker immediately ({e }), using default price feed."
+            )
         return True
 
     def disconnect(self) -> None:
@@ -52,12 +51,12 @@ class PublicApiMockBroker(BrokerInterface):
         logger.info("Public API Mock Broker disconnected.")
 
     def _fetch_live_ticker(self, symbol: str) -> float:
-        """Fetch live ticker price from Binance public API with fallback."""
+
         if self.simulated_price is not None:
             return self.simulated_price
         try:
             clean_sym = symbol.replace("/", "").replace("_", "").upper()
-            url = f"https://api.binance.com/api/v3/ticker/price?symbol={clean_sym}"
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={clean_sym }"
             resp = requests.get(url, timeout=3)
             if resp.status_code == 200:
                 self.last_price = float(resp.json()["price"])
@@ -84,41 +83,53 @@ class PublicApiMockBroker(BrokerInterface):
             "volume_max": 100.0,
         }
 
-    def get_candles(self, symbol: str, timeframe: str, count: int = 100) -> pd.DataFrame:
-        """
-        Fetch OHLCV candles from public API. Falls back to synthetic candles
-        if network is unavailable.
-        """
+    def get_candles(
+        self, symbol: str, timeframe: str, count: int = 100
+    ) -> pd.DataFrame:
+
         clean_sym = symbol.replace("/", "").replace("_", "").upper()
-        # Map timeframe to Binance interval
-        interval_map = {"M1": "1m", "M5": "5m", "M15": "15m", "M30": "30m", "H1": "1h", "H4": "4h", "D1": "1d"}
+
+        interval_map = {
+            "M1": "1m",
+            "M5": "5m",
+            "M15": "15m",
+            "M30": "30m",
+            "H1": "1h",
+            "H4": "4h",
+            "D1": "1d",
+        }
         interval = interval_map.get(timeframe.upper(), "15m")
 
         try:
-            url = f"https://api.binance.com/api/v3/klines?symbol={clean_sym}&interval={interval}&limit={min(count, 500)}"
+            url = f"https://api.binance.com/api/v3/klines?symbol={clean_sym }&interval={interval }&limit={min (count ,500 )}"
             resp = requests.get(url, timeout=4)
             if resp.status_code == 200:
                 data = resp.json()
                 rows = []
                 for item in data:
-                    rows.append({
-                        "time": pd.to_datetime(item[0], unit="ms"),
-                        "open": float(item[1]),
-                        "high": float(item[2]),
-                        "low": float(item[3]),
-                        "close": float(item[4]),
-                        "volume": float(item[5]),
-                    })
+                    rows.append(
+                        {
+                            "time": pd.to_datetime(item[0], unit="ms"),
+                            "open": float(item[1]),
+                            "high": float(item[2]),
+                            "low": float(item[3]),
+                            "close": float(item[4]),
+                            "volume": float(item[5]),
+                        }
+                    )
                 df = pd.DataFrame(rows)
                 if not df.empty:
                     self.last_price = df.iloc[-1]["close"]
                     return df
         except Exception as e:
-            logger.warning(f"Public API kline fetch failed ({e}). Generating realistic synthetic candles.")
+            logger.warning(
+                f"Public API kline fetch failed ({e }). Generating realistic synthetic candles."
+            )
 
-        # Synthetic candle fallback for reliable offline testing
         now = pd.Timestamp.now()
-        timestamps = [now - pd.Timedelta(minutes=15 * (count - i)) for i in range(count)]
+        timestamps = [
+            now - pd.Timedelta(minutes=15 * (count - i)) for i in range(count)
+        ]
         np.random.seed(42)
         returns = np.random.normal(0.0002, 0.003, count)
         prices = self.last_price * np.cumprod(1 + returns)
@@ -129,19 +140,21 @@ class PublicApiMockBroker(BrokerInterface):
         closes = opens * (1 + np.random.normal(0, 0.0015, count))
         volumes = np.random.uniform(50, 500, count)
 
-        df = pd.DataFrame({
-            "time": timestamps,
-            "open": opens,
-            "high": highs,
-            "low": lows,
-            "close": closes,
-            "volume": volumes,
-        })
+        df = pd.DataFrame(
+            {
+                "time": timestamps,
+                "open": opens,
+                "high": highs,
+                "low": lows,
+                "close": closes,
+                "volume": volumes,
+            }
+        )
         self.last_price = float(df.iloc[-1]["close"])
         return df
 
     def _update_open_positions(self):
-        """Update unrealized PnL and trigger SL/TP hits."""
+
         price = self._fetch_live_ticker(self.symbol)
         closed_tickets = []
         unrealized_total = 0.0
@@ -149,24 +162,32 @@ class PublicApiMockBroker(BrokerInterface):
         for ticket, pos in list(self.positions.items()):
             pos.current_price = price
             if pos.order_type == "BUY":
-                # Check Stop Loss
+
                 if pos.sl > 0 and price <= pos.sl:
-                    logger.info(f"[SL HIT] Position #{ticket} BUY closed at SL: {pos.sl:.2f}")
+                    logger.info(
+                        f"[SL HIT] Position #{ticket } BUY closed at SL: {pos .sl :.2f}"
+                    )
                     closed_tickets.append((ticket, pos.sl))
                     continue
-                # Check Take Profit
+
                 if pos.tp > 0 and price >= pos.tp:
-                    logger.info(f"[TP HIT] Position #{ticket} BUY closed at TP: {pos.tp:.2f}")
+                    logger.info(
+                        f"[TP HIT] Position #{ticket } BUY closed at TP: {pos .tp :.2f}"
+                    )
                     closed_tickets.append((ticket, pos.tp))
                     continue
                 pnl = (price - pos.open_price) * pos.volume
-            else:  # SELL
+            else:
                 if pos.sl > 0 and price >= pos.sl:
-                    logger.info(f"[SL HIT] Position #{ticket} SELL closed at SL: {pos.sl:.2f}")
+                    logger.info(
+                        f"[SL HIT] Position #{ticket } SELL closed at SL: {pos .sl :.2f}"
+                    )
                     closed_tickets.append((ticket, pos.sl))
                     continue
                 if pos.tp > 0 and price <= pos.tp:
-                    logger.info(f"[TP HIT] Position #{ticket} SELL closed at TP: {pos.tp:.2f}")
+                    logger.info(
+                        f"[TP HIT] Position #{ticket } SELL closed at TP: {pos .tp :.2f}"
+                    )
                     closed_tickets.append((ticket, pos.tp))
                     continue
                 pnl = (pos.open_price - price) * pos.volume
@@ -188,7 +209,9 @@ class PublicApiMockBroker(BrokerInterface):
         else:
             pnl = (pos.open_price - exit_price) * pos.volume
         self.balance += pnl
-        logger.info(f"Position #{ticket} closed at {exit_price:.2f}. Realized PnL: ${pnl:+,.2f} | Balance: ${self.balance:,.2f}")
+        logger.info(
+            f"Position #{ticket } closed at {exit_price :.2f}. Realized PnL: ${pnl :+,.2f} | Balance: ${self .balance :,.2f}"
+        )
 
     def get_positions(self, symbol: str) -> List[Position]:
         self._update_open_positions()
@@ -225,8 +248,8 @@ class PublicApiMockBroker(BrokerInterface):
         )
         self.positions[ticket] = pos
         logger.info(
-            f"[PAPER ORDER] #{ticket} {order_type} {volume:.2f} {symbol} @ {price:.2f} "
-            f"(SL: {sl:.2f}, TP: {tp:.2f})"
+            f"[PAPER ORDER] #{ticket } {order_type } {volume :.2f} {symbol } @ {price :.2f} "
+            f"(SL: {sl :.2f}, TP: {tp :.2f})"
         )
         self._update_open_positions()
         return ticket
@@ -236,14 +259,20 @@ class PublicApiMockBroker(BrokerInterface):
             pos = self.positions[ticket]
             pos.sl = sl
             pos.tp = tp
-            logger.info(f"[PAPER MODIFY] #{ticket} updated SL -> {sl:.2f}, TP -> {tp:.2f}")
+            logger.info(
+                f"[PAPER MODIFY] #{ticket } updated SL -> {sl :.2f}, TP -> {tp :.2f}"
+            )
             return True
         return False
 
     def close_position(self, ticket: int) -> bool:
         if ticket in self.positions:
             info = self.get_symbol_info(self.positions[ticket].symbol)
-            exit_price = info["bid"] if self.positions[ticket].order_type == "BUY" else info["ask"]
+            exit_price = (
+                info["bid"]
+                if self.positions[ticket].order_type == "BUY"
+                else info["ask"]
+            )
             self._close_position_internal(ticket, exit_price)
             return True
         return False
